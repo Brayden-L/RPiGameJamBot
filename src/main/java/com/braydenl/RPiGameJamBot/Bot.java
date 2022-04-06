@@ -11,17 +11,22 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
+import org.apache.commons.collections4.multiset.SynchronizedMultiSet;
 import org.jetbrains.annotations.NotNull;
 import javax.security.auth.login.LoginException;
 import java.util.List;
+import java.util.Objects;
 
 public class Bot extends ListenerAdapter {
 
-    static final String TOKEN = new Toml().read("config.toml").getString("TOKEN");
+    static String TOKEN;
     public static JDA jda;
     MessageChannel channel;
 
-    public static void main(String[] args) throws LoginException {
+    public static void main(String[] args) throws LoginException, InterruptedException {
+
+        TOKEN = args[0];
+
         // Start Discord bot.
         System.out.println("Starting bot.");
         jda = JDABuilder.createLight(TOKEN, GatewayIntent.GUILD_MESSAGES)
@@ -29,8 +34,9 @@ public class Bot extends ListenerAdapter {
                 .setActivity(Activity.watching("you."))
                 .build();
 
-        List<Guild> guilds = jda.getGuilds();
-        for (Guild guild : guilds) new Thread(() -> createAndUpsertCommand(guild)).start();
+        Thread.sleep(5000); // This deals with a race condition somehow.
+
+        createAndUpsertCommand(Objects.requireNonNull(jda.getGuildById("204621105720328193")));
     }
 
     private static void createAndUpsertCommand(@NotNull Guild guild) {
